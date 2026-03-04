@@ -1,0 +1,42 @@
+steps:
+  # 1. Construir la imagen con tag único (BUILD_ID) y latest
+  - name: "gcr.io/cloud-builders/docker"
+    args:
+      - build
+      - -t
+      - gcr.io/ortega-473114/nexus-sync-service:$BUILD_ID
+      - -t
+      - gcr.io/ortega-473114/nexus-sync-service:latest
+      - .
+
+  # 2. Subir ambas etiquetas a Container Registry
+  - name: "gcr.io/cloud-builders/docker"
+    args:
+      - push
+      - --all-tags
+      - gcr.io/ortega-473114/nexus-sync-service
+
+  # 3. Inyectar BUILD_ID en service.yaml para forzar nueva revisión en Cloud Run
+  - name: "gcr.io/cloud-builders/docker"
+    entrypoint: sed
+    args:
+      - -i
+      - s|gcr.io/ortega-473114/nexus-sync-service:latest|gcr.io/ortega-473114/nexus-sync-service:$BUILD_ID|g
+      - service.yaml
+
+  # 4. Deployar en Cloud Run aplicando service.yaml
+  - name: "gcr.io/google.com/cloudsdktool/cloud-sdk"
+    entrypoint: gcloud
+    args:
+      - run
+      - services
+      - replace
+      - service.yaml
+      - --region=us-central1
+
+images:
+  - gcr.io/ortega-473114/nexus-sync-service:$BUILD_ID
+  - gcr.io/ortega-473114/nexus-sync-service:latest
+
+options:
+  logging: CLOUD_LOGGING_ONLY

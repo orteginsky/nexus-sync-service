@@ -1,0 +1,47 @@
+# --- SEGURIDAD Y SECRETOS (CRÍTICO) ---
+# Archivo de clave de Service Account de Google Cloud
+sa_key.json
+# Variables de entorno locales
+.env
+# Cualquier otro archivo de credenciales
+*.pem
+*.key
+
+# --- PYTHON ---
+# Entornos virtuales
+.venv/
+venv/
+env/
+# Archivos compilados y caché
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+# Distribución / Paquetes
+dist/
+build/
+*.egg-info/
+
+# --- JUPYTER NOTEBOOKS ---
+# Cache de checkpoints de tus archivos .ipynb
+.ipynb_checkpoints/
+
+# --- DOCKER ---
+# Si generas archivos de log dentro del contenedor que se montan localmente
+*.log
+
+# --- TESTING ---
+# Reportes de cobertura y caché de pytest
+.pytest_cache/
+.coverage
+htmlcov/
+
+# --- SISTEMA OPERATIVO ---
+.DS_Store
+Thumbs.db
+
+# claude
+.claude
+tests
+
+service.yaml

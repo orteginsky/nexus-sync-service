@@ -1,0 +1,36 @@
+# Git
+.git
+.gitignore
+
+# Python
+__pycache__
+*.pyc
+*.pyo
+*.pyd
+
+# Entornos virtuales
+.venv
+venv
+env
+
+# Credenciales y secretos — nunca deben entrar en la imagen
+.env
+.env.*
+sa_key.json
+
+# Tests y notebooks
+tests/
+*.ipynb
+
+# Documentación y archivos que no necesita el runtime
+*.md
+request.txt
+
+# Archivos de CI/CD y configuración de despliegue
+service.yaml
+cloudbuild.yaml
+.dockerignore
+
+# IDEs
+.vscode
+.idea
