@@ -88,8 +88,13 @@ class SheetService:
             updates = []
             new_rows = []
 
-            # 4. Procesar registros
+            # 4. Procesar registros (excluir los que tengan "duplicado" en task_name)
             for record in db_records:
+                task_name = getattr(record, 'task_name', '') or ''
+                if 'duplicado' in task_name.lower():
+                    logger.debug(f"Registro {record.task_id} omitido por task_name duplicado: {task_name!r}")
+                    stats.total_db_records -= 1
+                    continue
                 # Convertimos objeto DB a dict usando tu COLUMN_MAPPING
                 raw_data = {col: getattr(record, attr, "") for attr, col in settings.COLUMN_MAPPING.items()}
                 clean_data = processor.procesar_fila(raw_data)
@@ -111,7 +116,7 @@ class SheetService:
 
             # 5. Ejecutar cambios
             if updates:
-                self._batch_update(ws.spreadsheet, updates)
+                self._batch_update(ws, updates)
             
             if new_rows:
                 ws.append_rows(new_rows, value_input_option="USER_ENTERED")
@@ -124,11 +129,26 @@ class SheetService:
             stats.errors.append(str(e))
             return stats
 
-    def _batch_update(self, spreadsheet, updates):
+    def _with_retry(self, func, *args, max_retries=3, **kwargs):
+        """Reintenta una llamada a la API de Google con backoff exponencial ante errores 503."""
+        import gspread.exceptions
+        for attempt in range(max_retries):
+            try:
+                return func(*args, **kwargs)
+            except gspread.exceptions.APIError as e:
+                status = getattr(e.response, 'status_code', None)
+                if status == 503 and attempt < max_retries - 1:
+                    wait = 5 * (2 ** attempt)  # 5s, 10s, 20s
+                    logger.warning(f"Google API 503 - reintentando en {wait}s (intento {attempt + 1}/{max_retries})")
+                    time.sleep(wait)
+                else:
+                    raise
+
+    def _batch_update(self, ws, updates, chunk_size=100):
         """Actualiza en bloques para no agotar la cuota de la API de Google."""
-        # Lógica de troceado (chunks) similar a la que ya tenías
-        pass
-    # ... (todo el código anterior de la clase SheetService)
+        for i in range(0, len(updates), chunk_size):
+            chunk = updates[i:i + chunk_size]
+            self._with_retry(ws.batch_update, chunk, value_input_option="USER_ENTERED")
 
 def get_sheet_service() -> SheetService:
         """
